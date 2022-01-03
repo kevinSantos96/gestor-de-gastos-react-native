@@ -1,4 +1,4 @@
-import React,{ useState } from 'react';
+import React ,{useEffect, useState}from 'react';
 import {
   Alert,
   SafeAreaView,
@@ -10,6 +10,7 @@ import {
   Image,
   Modal
 } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import { ControlPresupuesto } from './src/components/ControlPresupuesto';
 import { Header } from './src/components/Header';
@@ -27,7 +28,68 @@ const App=()=> {
   const [modal, setModal] = useState(false);//activar el modal con el boton   
   const [gastoSelect, setGastoSelect] = useState({});
   const [filtro, setFiltro] = useState('')
-  const [gastosFiltrados, setGastosFiltrados] = useState([])
+  const [gastosFiltrados, setGastosFiltrados] = useState([]);
+
+  //REVISAR SI HAY UN PRESUPUESTO EN STORAGE
+  useEffect(() => {
+    const obtenerPresupuestoStorage =async()=>{
+      try {
+        const presupuestoStorage = await AsyncStorage.getItem('planificador_presupuesto') ?? 0// si no hay nada le asignamos el valor de 0
+        
+        if(presupuestoStorage> 0){
+          setPresupuesto(presupuestoStorage)
+          setIsValidPresupuesto(true)
+        }
+      
+      } catch (error) {
+        console.log(error)
+      }
+    }
+    obtenerPresupuestoStorage();
+    
+  }, [])
+
+  //ALMACENAR EN EL LOCALSTORAGE
+  useEffect(() => {
+    if(isValidPresupuesto){
+      const almacenarPresutostorage = async()=>{
+        try {
+          await AsyncStorage.setItem('planificador_presupuesto',presupuesto)
+        } catch (error) {
+          console.log(error)
+        } 
+      }
+      almacenarPresutostorage();
+    }    
+    
+  }, [isValidPresupuesto])//se ejedcutara cuando este pase a true
+
+
+  useEffect(() => {
+    const obtenerGastosStorage = async()=>{
+      try {
+        const gastosStorage = await AsyncStorage.getItem('planificador_gastos');
+
+        setGastos( gastosStorage? JSON.parse(gastosStorage):[])
+      } catch (error) {
+        console.log(error)
+      }
+    } 
+    obtenerGastosStorage()
+  }, [])
+
+  //  COLOCAR GASTOS EN STORAGE
+  useEffect(() => {
+    const guardarGatosStorge = async ()=>{
+      try {
+        await AsyncStorage.setItem('planificador_gastos',JSON.stringify(gastos))
+      } catch (error) {
+        console.log(error)
+      }
+    }
+    guardarGatosStorge();
+  }, [gastos])
+
   
 
   const handleNuevoPresupuesto =(presupuesto)=>{
@@ -83,6 +145,28 @@ const App=()=> {
 
   }
 
+  const resetearApp=()=>{
+    Alert.alert(
+      'Desaeas resetear la app?',
+      'Esto eliminara el presupuesto y gastos',
+      [
+        {text: 'No', style: 'cancel'},
+        {text: 'Si, Eliminar', onPress:async()=>{
+          try {
+              await AsyncStorage.clear();
+
+              setIsValidPresupuesto(false);
+              setPresupuesto(0);
+              setGastos([]);
+          } catch (error) {
+            console.log(error) 
+          }
+        }}
+      ]
+    )
+  }
+
+
   return (
     <View style={styles.contenedor}>
       <ScrollView>
@@ -94,7 +178,9 @@ const App=()=> {
               (
                 <ControlPresupuesto 
                   presupuesto={ presupuesto }
-                  gastos={ gastos } />
+                  gastos={ gastos } 
+                  resetearApp={ resetearApp }
+                  />
 
               ): 
               (<NuevoPresupuesto

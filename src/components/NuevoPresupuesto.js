@@ -1,6 +1,7 @@
 import React from 'react'
 import { View, Text, TextInput, Pressable, StyleSheet } from 'react-native'
 
+
 import { globalStyles } from '../styles';
 
 
@@ -10,10 +11,10 @@ export const NuevoPresupuesto = ({
     setPresupuesto 
 }) => {
 
-
     const handleSubmit = ()=>{
         handleNuevoPresupuesto(presupuesto)  
     }
+
 
     return (
         <View style={styles.contenedor}>
